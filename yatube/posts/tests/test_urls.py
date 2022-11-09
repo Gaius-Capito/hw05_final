@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -48,7 +47,6 @@ class PostURLTests(TestCase):
         self.authorized_author = Client()
         self.authorized_client.force_login(self.user)
         self.authorized_author.force_login(self.author)
-        cache.clear()
 
     def test_url_connected_to_reverse(self):
         """reverse соответствует url"""
