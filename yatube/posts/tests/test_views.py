@@ -91,6 +91,7 @@ class PostsPagesTests(TestCase):
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField,
+            'image': forms.fields.ImageField,
         }
         for name, arg in pages:
             with self.subTest(name=name):
@@ -151,7 +152,7 @@ class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='user')
+        cls.follower = User.objects.create_user(username='follower')
         cls.author = User.objects.create_user(username='author')
         cls.group = Group.objects.create(
             title='Тестовая-группа',
@@ -171,13 +172,22 @@ class PaginatorViewsTest(TestCase):
     def setUp(self):
         self.authorized_author = Client()
         self.authorized_author.force_login(self.author)
+        self.authorized_follower = Client()
+        self.authorized_follower.force_login(self.follower)
+        self.authorized_follower.get(
+            reverse(
+                'posts:profile_follow',
+                args=(self.author,)
+            )
+        )
 
     def test_paginator(self):
         """Проверка пагинации"""
         paginator_urls = (
             ('posts:index', None),
             ('posts:group_list', (self.group.slug,)),
-            ('posts:profile', (self.author.username,))
+            ('posts:profile', (self.author.username,)),
+            ('posts:follow_index', None),
         )
         pages = (
             ('?page=1', settings.POSTS_NUMS),
@@ -189,7 +199,7 @@ class PaginatorViewsTest(TestCase):
             with self.subTest(address=address):
                 for page, nums in pages:
                     with self.subTest(page=page):
-                        response = self.authorized_author.get(
+                        response = self.authorized_follower.get(
                             reverse(address, args=args) + page
                         )
                         self.assertEqual(
@@ -216,6 +226,7 @@ class FollowerTests(TestCase):
         self.authorized_following.force_login(self.following)
 
     def test_follow(self):
+        """Проверка работы подписки"""
         count = Follow.objects.count()
         self.authorized_follower.get(
             reverse(
@@ -225,30 +236,47 @@ class FollowerTests(TestCase):
         )
         count_2 = Follow.objects.count()
         self.assertEqual(count_2, count + 1)
+        follow = Follow.objects.first()
+        self.assertEqual(follow.author, self.post.author)
+        self.assertEqual(follow.user, self.follower)
 
     def test_unfollow(self):
-        self.authorized_follower.get(
-            reverse(
-                'posts:profile_follow',
-                kwargs={"username": self.following}
-            )
+        """Проверка работы отписки"""
+        Follow.objects.create(
+            author=self.following,
+            user=self.follower,
         )
         count = Follow.objects.count()
         self.authorized_follower.get(
             reverse(
                 'posts:profile_unfollow',
-                kwargs={"username": self.following}
+                args=(self.following,)
             )
         )
         count_2 = Follow.objects.count()
         self.assertEqual(count_2, count - 1)
 
     def test_follow_self(self):
+        """Нельзя подписаться на самого себя"""
         count = Follow.objects.count()
         self.authorized_following.get(
             reverse(
                 'posts:profile_unfollow',
-                kwargs={"username": self.following}
+                args=(self.following,)
             )
         )
         self.assertEqual(count, count)
+
+    def test_second_time_follow_impossible(self):
+        """Нельзя подписаться на автора второй раз"""
+        count = Follow.objects.count()
+        follow = self.authorized_follower.get(
+            reverse(
+                'posts:profile_follow',
+                args=(self.following,)
+            )
+        )
+        for _ in range(settings.FOLLOW_NUMS):
+            follow
+        count_2 = Follow.objects.count()
+        self.assertEqual(count_2, count + 1)

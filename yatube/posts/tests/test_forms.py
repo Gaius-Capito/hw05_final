@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Group, Post, User
+from ..models import Comment, Group, Post, User
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -225,9 +225,8 @@ class CommentFormsTest(TestCase):
         comments_count = self.post.comments.count()
         form_data = {
             'text': 'Новый комментарий',
-            'author': self.author
         }
-        response = self.authorized_client.post(
+        self.authorized_client.post(
             reverse('posts:add_comment', args=(self.post.id,)),
             data=form_data,
             follow=True,
@@ -239,17 +238,16 @@ class CommentFormsTest(TestCase):
                 author=self.author
             ).exists()
         )
-        comment = response.context["comments"][0]
+        comment = Comment.objects.first()
         self.assertEqual(comment.post, self.post)
         self.assertEqual(comment.author, self.author)
-        self.assertEqual(comment.text, form_data["text"])
+        self.assertEqual(comment.text, form_data['text'])
 
     def test_guest_cannot_write_comment(self):
         """Комментарии не могут оставлять гости"""
         comments_count = self.post.comments.count()
         form_data = {
             'text': 'Новый комментарий',
-            'author': self.author
         }
         self.client.post(
             reverse('posts:add_comment', args=(self.post.id,)),

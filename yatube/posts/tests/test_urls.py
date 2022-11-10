@@ -134,6 +134,7 @@ class PostURLTests(TestCase):
             ('posts:post_detail', (self.post.pk,), 'posts/post_detail.html'),
             ('posts:group_list', (self.group.slug,), 'posts/group_list.html'),
             ('posts:post_edit', (self.post.pk,), 'posts/create_post.html'),
+            ('posts:follow_index', None, 'posts/follow.html')
         )
         for name, arg, template in templates:
             with self.subTest(name=name, arg=arg):

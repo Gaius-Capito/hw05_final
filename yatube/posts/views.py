@@ -28,10 +28,7 @@ def profile(request, username):
     post_list = author.posts.select_related('group')
     page_obj = paginator(request, post_list)
     following = (
-        request.user.is_authenticated and Follow.objects.filter(
-            user=request.user,
-            author=author
-        ).exists()
+        Follow.objects.filter(user__id=request.user.id, author=author).exists()
     )
     context = {
         'author': author,
@@ -42,7 +39,11 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
+    post = get_object_or_404(
+        Post.objects.select_related('author').prefetch_related(
+            'comments__author'),
+        pk=post_id
+    )
     form = CommentForm(
         request.POST or None,
         files=request.FILES or None
@@ -108,14 +109,11 @@ def profile_follow(request, username):
     author = User.objects.get(username=username)
     is_follower = Follow.objects.filter(user=request.user, author=author)
     if request.user != author and not is_follower.exists():
-        Follow.objects.create(user=request.user, author=author)
+        Follow.objects.get_or_create(user=request.user, author=author)
     return redirect('posts:profile', username=username,)
 
 
 @login_required
 def profile_unfollow(request, username):
-    author = get_object_or_404(User, username=username)
-    is_follower = Follow.objects.filter(user=request.user, author=author)
-    if is_follower.exists():
-        is_follower.delete()
+    Follow.objects.filter(author__username=username).delete()
     return redirect('posts:profile', username=username)

@@ -3,11 +3,13 @@
 {% block content %}
 {% load user_filters %}
 {% load cache %}
+
   <div class="container py-5">
     <h1>Посты авторов, на которые Вы подписаны</h1>
+    {% include 'posts/includes/switcher.html' with follow=True %}
     {% cache 20 index_page with page_obj %}
     {% for post in page_obj %}
-      {% include 'posts/includes/post_info.html' %}
+      {% include 'posts/includes/post_info.html' with follow=True %}
       {% if not forloop.last %}<hr>{% endif %}
     {% endfor %}
     {% include 'posts/includes/paginator.html' %}

@@ -114,6 +114,8 @@ NUMS_TEST_POSTS = 13
 
 NUMS_POSTS_AFTER_EDIT_ZERO = 0
 
+FOLLOW_NUMS = 2
+
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 MEDIA_URL = '/media/'

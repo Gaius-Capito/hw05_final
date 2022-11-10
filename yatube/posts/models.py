@@ -79,6 +79,14 @@ class Comment(models.Model):
         verbose_name="Время публикации"
     )
 
+    class Meta:
+        ordering = ('-created',)
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return self.text[:settings.POST_CHAR_LENGTH]
+
 
 class Follow(models.Model):
     user = models.ForeignKey(
@@ -93,3 +101,10 @@ class Follow(models.Model):
         related_name='following',
         verbose_name='Подписчик',
     )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+
+    def __str__(self):
+        return f'{self.user} подписан на {self.author}'
