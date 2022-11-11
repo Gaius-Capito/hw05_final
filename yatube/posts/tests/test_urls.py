@@ -56,10 +56,6 @@ class PostURLTests(TestCase):
 
     def test_post_edit_url_for_author(self):
         """ Проверка доступности url автору"""
-        redirect_names_profile = [
-            'posts:profile_follow',
-            'posts:profile_unfollow'
-        ]
         for name, arg, url in self.urls:
             with self.subTest(name=name, arg=arg):
                 response = self.authorized_author.get(reverse(name, args=arg))
@@ -68,10 +64,15 @@ class PostURLTests(TestCase):
                         response,
                         reverse('posts:post_detail', args=(self.post.pk,))
                     )
-                elif name in redirect_names_profile:
+                elif name == 'posts:profile_follow':
                     self.assertRedirects(
                         response,
                         reverse('posts:profile', args=(self.author,))
+                    )
+                elif name == 'posts:profile_unfollow':
+                    self.assertEqual(
+                        response.status_code,
+                        HTTPStatus.NOT_FOUND
                     )
                 else:
                     self.assertEqual(response.status_code, HTTPStatus.OK)
